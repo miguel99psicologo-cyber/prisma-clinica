@@ -172,7 +172,7 @@ function patientDetail(){let c=caseById(selectedPatient);if(!c)return dash();let
 function startSession(id){let c=caseById(id);if(!c){toast('El caso no existe.',true);return}let existing=activeSession(id);if(existing){selectedPatient=id;page='simulation';render();return}let profile=state.patients[id]||{phase:PHASES[0],difficulty:state.profile.difficulty};state.patients[id]=profile;let prior=closedSessions(id).at(-1),event=prior?.event||null;let opening=prior?'Hola. Quería contarte qué ha pasado desde la última vez que nos vimos.':c.opening;let s={id:uid(),patientId:id,number:patientSessions(id).length+1,phase:profile.phase,difficulty:profile.difficulty,started:new Date().toISOString(),ended:null,status:'active',dimensions:latestState(id),messages:[{id:uid(),role:'patient',text:opening,at:new Date().toISOString()}],turns:[],trajectories:[latestState(id)],leadInEvent:event,review:null,summary:null};state.sessions.push(s);state.active[id]=s.id;save();selectedPatient=id;page='simulation';render()}
 function currentSession(){return selectedPatient?activeSession(selectedPatient):null}
 function chatBubble(msg,c){return `<div class="bubble-row ${msg.role==='therapist'?'mine':''}" role="group" aria-label="Mensaje de ${msg.role==='therapist'?'terapeuta':'consultante ' + h(c.name)}">${msg.role==='patient'?avatar(c):''}<div class="bubble">${h(msg.text).replace(/\n/g,'<br>')}<span class="msg-time">${timeFormat(msg.at)}</span></div></div>`}
-function simView(){let s=currentSession();if(!s)return `<div class="empty">No hay ninguna sesión abierta. <button class="btn btn-primary" data-action="go" data-page="library">Ver biblioteca</button></div>`;let c=caseById(s.patientId),phaseIdx=PHASES.indexOf(s.phase);return `<div class="page-head" style="margin-bottom:18px"><div><h1 class="page-title">Sala de simulación</h1><p class="subheading">Entrevista de entrenamiento · Sesión ${s.number} · ${h(c.name)}</p></div><div class="page-actions"><button class="btn btn-secondary btn-small" data-action="patient" data-id="${c.id}">${ico('back')} Ficha del caso</button><button class="btn btn-danger btn-small" data-action="finish-confirm">${ico('check')} Cerrar sesión</button></div></div><div class="sim-shell"><div class="sim-main"><div class="sim-header"><div class="sim-person">${avatar(c)}<div><h3>${h(c.name)}</h3><small>${c.age} años · ${h(c.topic)}</small></div></div><div class="sim-controls"><span class="pill green">Sesión ${s.number}</span></div></div><div class="phase-bar"><div class="phase-heading"><b>${h(s.phase)}</b><span>Etapa ${phaseIdx+1} de 6</span></div><div class="phase-steps">${PHASES.map((_,i)=>`<span class="phase-point ${i<phaseIdx?'done':i===phaseIdx?'current':''}"></span>`).join('')}</div></div><div class="chat-area" id="chat-scroll" role="log" aria-label="Conversación simulada" aria-live="off"><div class="chat-hint">${ico('shield',13)} Entorno simulado · No utilices datos de pacientes reales</div>${s.messages.map(m=>chatBubble(m,c)).join('')}<div id="typing" class="bubble-row hide">${avatar(c)}<div class="bubble"><span class="typing"><i></i><i></i><i></i></span></div></div></div><form class="composer" id="chat-form"><div class="compose-row"><textarea id="message-input" maxlength="1800" placeholder="Escribe tu intervención como terapeuta..." aria-label="Escribe tu intervención" ${isSending?'disabled':''} required></textarea><button class="send-btn" id="chat-send" title="Enviar intervención" aria-label="Enviar intervención" ${isSending?'disabled':''}>${ico('send')}</button></div><div class="composer-foot"><span>Enter: enviar · Mayús+Enter: salto de línea</span><span>${serverMode==='local-ai'?'IA local gratuita en este computador':serverMode==='ai'?'IA conectada':'Guion interactivo de demostración'}</span></div></form></div><aside class="sim-side"><section class="panel"><div class="panel-title"><h3>Contexto clínico</h3></div><div class="side-meta"><span>Edad</span><b>${c.age} años</b></div><div class="side-meta"><span>Ocupación</span><b>${h(c.occupation)}</b></div><div class="side-meta"><span>Motivo</span><b>${h(c.topic)}</b></div><div class="side-meta"><span>Dificultad</span><b>${h(s.difficulty)}</b></div><div class="side-meta"><span>Intervenciones</span><b>${s.messages.filter(m=>m.role==='therapist').length}</b></div><div class="divider"></div><p class="help-info">${h(c.description)}</p>${s.leadInEvent?`<div class="notice" style="margin-top:12px"><b>Evento sintético entre sesiones:</b> ${h(s.leadInEvent.description||'')}</div>`:''}</section><section class="panel"><div class="panel-title"><h3>Decisiones de sesión</h3></div><div class="side-actions"><button class="btn btn-secondary" data-action="change-difficulty">${ico('filter')} Ajustar dificultad</button><button class="btn btn-secondary" data-action="next-phase">${ico('arrow')} Finalizar y avanzar fase</button><button class="btn btn-danger" data-action="finish-confirm">${ico('check')} Finalizar y evaluar</button></div>${(s.turns||[]).length?`<div class="divider"></div><div class="side-meta"><span>Última intervención</span><b>${h(s.turns.at(-1).type||'Otro')}</b></div><p class="help-info">Clasificación ${s.turns.at(-1).source==='ai'?'asistida por IA':'heurística'} · Puntaje ${(100*(s.turns.at(-1).quality||0)).toFixed(0)}/100 (exploratorio).</p>`:''}<div class="divider"></div><h3 style="font-size:13px;margin-bottom:15px">Estado dimensional simulado</h3>${dimensionBars(s.dimensions)}<div class="mode-note">${serverMode==='local-ai'?'Las respuestas son generadas en tu navegador por un modelo local gratuito, si el equipo es compatible. No son clínicamente validadas.':serverMode==='ai'?'Las respuestas del personaje son generadas por el modelo configurado. Su precisión clínica no está garantizada.':'Esta sesión gratuita usa respuestas basadas en reglas. Puedes probar IA local desde el botón superior si tu equipo y Chrome son compatibles.'}</div></section><div class="notice warning">${ico('alert',15)} Simulación para formación. No sustituye supervisión profesional, evaluación psicológica ni atención sanitaria.</div></aside></div>`}
+function simView(){let s=currentSession();if(!s)return `<div class="empty">No hay ninguna sesión abierta. <button class="btn btn-primary" data-action="go" data-page="library">Ver biblioteca</button></div>`;let c=caseById(s.patientId),phaseIdx=PHASES.indexOf(s.phase);return `<div class="page-head" style="margin-bottom:18px"><div><h1 class="page-title">Sala de simulación</h1><p class="subheading">Entrevista de entrenamiento · Sesión ${s.number} · ${h(c.name)}</p></div><div class="page-actions"><button class="btn btn-secondary btn-small" data-action="patient" data-id="${c.id}">${ico('back')} Ficha del caso</button><button class="btn btn-danger btn-small" data-action="finish-confirm">${ico('check')} Cerrar sesión</button></div></div><div class="sim-shell"><div class="sim-main"><div class="sim-header"><div class="sim-person">${avatar(c)}<div><h3>${h(c.name)}</h3><small>${c.age} años · ${h(c.topic)}</small></div></div><div class="sim-controls"><span class="pill green">Sesión ${s.number}</span></div></div><div class="phase-bar"><div class="phase-heading"><b>${h(s.phase)}</b><span>Etapa ${phaseIdx+1} de 6</span></div><div class="phase-steps">${PHASES.map((_,i)=>`<span class="phase-point ${i<phaseIdx?'done':i===phaseIdx?'current':''}"></span>`).join('')}</div></div><div class="chat-area" id="chat-scroll" role="log" aria-label="Conversación simulada" aria-live="off"><div class="chat-hint">${ico('shield',13)} Entorno simulado · No utilices datos de pacientes reales</div>${s.messages.map(m=>chatBubble(m,c)).join('')}<div id="typing" class="bubble-row hide">${avatar(c)}<div class="bubble"><span class="typing"><i></i><i></i><i></i></span></div></div></div><form class="composer" id="chat-form"><div class="compose-row"><textarea id="message-input" maxlength="1800" placeholder="Escribe tu intervención como terapeuta..." aria-label="Escribe tu intervención" ${isSending?'disabled':''} required></textarea><button class="send-btn" id="chat-send" title="Enviar intervención" aria-label="Enviar intervención" ${isSending?'disabled':''}>${ico('send')}</button></div><div class="composer-foot"><span>Enter: enviar · Mayús+Enter: salto de línea</span><span>${serverMode==='local-ai'?'IA local gratuita en este computador':serverMode==='ai'?'IA conectada':'Guion interactivo de demostración'}</span></div></form></div><aside class="sim-side"><section class="panel"><div class="panel-title"><h3>Contexto clínico</h3></div><div class="side-meta"><span>Edad</span><b>${c.age} años</b></div><div class="side-meta"><span>Ocupación</span><b>${h(c.occupation)}</b></div><div class="side-meta"><span>Motivo</span><b>${h(c.topic)}</b></div><div class="side-meta"><span>Dificultad</span><b>${h(s.difficulty)}</b></div><div class="side-meta"><span>Intervenciones</span><b>${s.messages.filter(m=>m.role==='therapist').length}</b></div><div class="divider"></div><p class="help-info">${h(c.description)}</p>${s.leadInEvent?`<div class="notice" style="margin-top:12px"><b>Evento sintético entre sesiones:</b> ${h(s.leadInEvent.description||'')}</div>`:''}</section><section class="panel"><div class="panel-title"><h3>Decisiones de sesión</h3></div><div class="side-actions"><button class="btn btn-secondary" data-action="change-difficulty">${ico('filter')} Ajustar dificultad</button><button class="btn btn-secondary" data-action="next-phase">${ico('arrow')} Finalizar y avanzar fase</button><button class="btn btn-danger" data-action="finish-confirm">${ico('check')} Finalizar y evaluar</button></div>${(s.turns||[]).length?`<div class="divider"></div><div class="side-meta"><span>Última intervención</span><b>${h(s.turns.at(-1).type||'Otro')}</b></div><p class="help-info">${s.turns.at(-1).type==='Interacción no evaluable'?'Interacción social o metainstrucción: no se asigna puntuación clínica.':`Clasificación ${s.turns.at(-1).source==='ai'?'asistida por IA':'heurística'} · Puntaje ${(100*(s.turns.at(-1).quality||0)).toFixed(0)}/100 (exploratorio).`}</p>`:''}<div class="divider"></div><h3 style="font-size:13px;margin-bottom:15px">Estado dimensional simulado</h3>${dimensionBars(s.dimensions)}<div class="mode-note">${serverMode==='local-ai'?'Las respuestas son generadas en tu navegador por un modelo local gratuito, si el equipo es compatible. No son clínicamente validadas.':serverMode==='ai'?'Las respuestas del personaje son generadas por el modelo configurado. Su precisión clínica no está garantizada.':'Esta sesión gratuita usa respuestas basadas en reglas. Puedes probar IA local desde el botón superior si tu equipo y Chrome son compatibles.'}</div></section><div class="notice warning">${ico('alert',15)} Simulación para formación. No sustituye supervisión profesional, evaluación psicológica ni atención sanitaria.</div></aside></div>`}
 function categorize(text,phase='Inicio de la relación'){const x=PRISMA_ENGINE.classify(text,phase);return{type:x.type,score:x.quality,delta:PRISMA_ENGINE.DELTAS[x.type]||PRISMA_ENGINE.DELTAS.Otro,quality:x.quality,...x}}
 function clamp(x){return Math.max(0,Math.min(10,+x.toFixed(2)))}
 function adjustDimension(s,therapistText){const cat=categorize(therapistText,s.phase);s.dimensions=PRISMA_ENGINE.nextDimensions(s.dimensions,cat,s.phase,s.difficulty,caseById(s.patientId).baseline);s.turns=s.turns||[];s.turns.push({...cat,at:new Date().toISOString()});s.trajectories=s.trajectories||[];s.trajectories.push(s.dimensions.slice());return cat}
@@ -906,6 +906,99 @@ body,button,input,select,textarea,.page-title,.brand b,.hero h2,.metric-number,.
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
 `;document.head.appendChild(prismaProfessionalCSS);
 
+</script>
+
+<script>
+/* Prisma Clínica 3.3 — filtro de coherencia de roles y continuidad verificable.
+ * Cambia solo nuevos mensajes. Los registros anteriores no se alteran automáticamente.
+ * Los puntajes y respuestas son educativos, no clínicamente validados.
+ */
+'use strict';
+function prismaClearlyWrongRole(reply,c){
+ const t=prismaNorm(reply),first=prismaNorm(c?.name||'').split(' ')[0];
+ return /\b(en que (puedo|podria) (ayudarte|apoyarte|servirte|orientarte)|como (puedo|podria) (ayudarte|apoyarte|orientarte)|que (te preocupa|necesitas) (hoy|ahora)|estoy aqui para (ayudarte|apoyarte|escucharte)|te ofrezco (apoyo|terapia)|soy (tu|su) (terapeuta|psicologo|psicologa)|puedo ayudarte a (entender|superar|gestionar)|te recomiendo que|te sugiero que|mi paciente|mi consultante|como (tu |su )?terapeuta|gracias por confiar en mi|me alegro de haberte conocido)\b/.test(t)||
+ /\b(como puedo (colaborarte|servirte)|en que puedo (apoyarte|colaborarte)|estoy para (escucharte|apoyarte)|soy tu consejer[oa]|intentare ayudarte|como consej[oa]|me alegra (que hayas venido|haberte recibido|que estes aqui))\b/.test(t)||
+ !!(first&&new RegExp('(?:^|[¡¿\\s])(?:hola|buenas)[,!. ]+'+first+'(?:[\\s!?.]|$)','i').test(t));
+}
+const prismaPreviousRoleValidator=prismaInvalidConsultantReply;
+prismaInvalidConsultantReply=function(reply,userText,c){
+ if(prismaPreviousRoleValidator(reply,userText,c))return true;
+ const raw=String(reply||'').trim(),t=prismaNorm(raw);
+ if(prismaClearlyWrongRole(raw,c))return true;
+ // Rechazar discurso de quien conduce la entrevista, incluidas variaciones no previstas.
+ if(/\b(ayudarte|apoyarte|orientarte|asesorarte|escucharte|aconsejarte|acompanarte|guiarte|brindarte apoyo|tomar decisiones por ti|ofrecerte herramientas|explorar tus emociones|entender tus sentimientos|quiero escucharte|cuentame (tu|que)|te escucho|dime (que|como) te sientes|quisiera (saber|preguntarte) como te sientes|para ayudarte|puedo ayudarte)\b/.test(t))return true;
+ if(/\b(terapeuta|psicolog[oa]|como consejer[oa]|consulta psicologica|plan de tratamiento|te propongo|vamos a trabajar|como tu asesor)\b/.test(t)&&!/\b(mi terapeuta|la psicologa me|mi psicologo|venir a terapia|no se si necesito terapia)\b/.test(t))return true;
+ if(/^(hola|buenas)[,!. ]+(?:[a-z]+[,!. ]+)?(como (estas|te sientes|te encuentras)|en que|que te)/.test(t))return true;
+ if(/\b(que tal estas|que te preocupa|que necesitas de mi|como te gustaria que te ayudara|quieres que (hablemos|exploremos)|te gustaria (que|explorar)|en que puedo apoyarte)\b/.test(t))return true;
+ // La respuesta del personaje debe expresar su propia vivencia, no solo asumir la voz de un asistente.
+ const personal=/\b(yo|me|mi|mis|estoy|siento|pienso|tengo|temo|evito|quiero|quisiera|necesito|creo|recuerdo|hago|hice|estuve|fui|llevo|vengo|antes|ultimamente|a veces|desde|cuando|porque|no se|no tengo|me cuesta|prefiero|suelo|noto|algo me|para mi|no quiero|siempre)\b/.test(t);
+ if(!personal)return true;
+ if((raw.match(/\?/g)||[]).length>1)return true;
+ // Conservar el escenario sintético sin permitir que la IA invente un riesgo distinto.
+ if(/\b(suicid|autoles|matarme|lastimarme|quitarme la vida|no despertar|no querer vivir|morirme|ganas de morir)\b/.test(t))return true;
+ return false;
+};
+
+prismaSystemPrompt=function(c,s){
+ const name=c.name,prior=closedSessions(c.id).slice(-2).map(x=>x.summary||'').join(' ').slice(0,750);
+ const examples=PRISMA_CASE_DETAILS[c.id]||PRISMA_CASE_DETAILS.valeria;
+ return `SIMULACIÓN EDUCATIVA DE UN CONSULTANTE FICTICIO. Eres exclusivamente ${name}, ${c.age} años, ${c.occupation}, una persona que ha ido A CONSULTA. La persona que escribe es el psicólogo que TE entrevista. Tu trabajo NO es ofrecer ayuda ni consejos: únicamente responder como ${name} a lo que te preguntan.\nIDENTIDAD: ${c.context}. Motivo: ${c.topic}. Antecedentes: ${c.history}. Pensamientos: ${c.responses.open}. Emociones: ${c.responses.emotion}. Conductas: ${c.responses.behavior}. Objetivos: ${c.responses.values}. Dificultad: ${s.difficulty}. Etapa: ${s.phase}. Sesiones anteriores: ${prior||'Ninguna'}.\nESTILO OBLIGATORIO: usa la primera persona, habla de tus experiencias, dudas y temores. Contesta la última intervención del psicólogo con una o dos frases naturales, específicas y breves (máximo 70 palabras). No hagas preguntas al profesional salvo para aclarar algo. No llames al terapeuta por tu propio nombre. No ofrezcas tratamiento, herramientas, apoyo emocional ni asistencia al terapeuta. No escribas '¿en qué puedo ayudarte?' ni términos de asistente virtual.\nEJEMPLO de diálogo válido entre roles: TERAPEUTA: Hola, ¿cómo estás? / ${name}: ${examples.greet?.[0]||c.opening}. TERAPEUTA: ¿Me cuentas una situación concreta? / ${name}: ${examples.example?.[0]||c.responses.behavior}.\nDa exclusivamente la respuesta hablada por ${name} y no añadas etiquetas, introducciones, ni el turno del terapeuta. No inventes diagnóstico, planes de suicidio, historia personal ajena al perfil ni detalles de métodos de autolesión.`;
+};
+
+// Filtro central de salida de todos los modelos locales; no se presenta una respuesta no segura como consultante.
+localAIReply=async function(c,s){
+ const question=prismaLatest(s,'therapist');
+ const intent=prismaOutputIntent(question);
+ if(['greet','rol','safety'].includes(intent)||prismaContextualSafety(s,question))return prismaNextReply(c,s,question);
+ // El modelo no puede usar como ejemplos respuestas de sesiones pasadas que invierten los roles.
+ const safeHistory=(s.messages||[]).filter(m=>m.role==='therapist'||!prismaInvalidConsultantReply(m.text,'',c));
+ const safeSession={...s,messages:safeHistory};
+ let result='';
+ try{result=await prismaFormerLocalAI(c,safeSession)}
+ catch(e){console.warn('Modelo local no disponible',e)}
+ if(prismaInvalidConsultantReply(result,question,c)){
+   toast('Se bloqueó una respuesta de IA fuera del rol. Se mostró una respuesta coherente con el consultante.',true);
+   return prismaNextReply(c,s,question);
+ }
+ return result;
+};
+
+// En sesiones antiguas con errores, hacer visible el problema sin borrar ni reescribir la transcripción.
+function prismaWrongOldReplies(s,c){
+ return (s.messages||[]).slice(1).filter(m=>m.role==='patient'&&prismaClearlyWrongRole(m.text,c)).length;
+}
+const prismaSimBeforeRoleRepair=simView;
+simView=function(){
+ let markup=prismaSimBeforeRoleRepair(),s=currentSession();
+ if(!s)return markup;
+ const c=caseById(s.patientId),bad=prismaWrongOldReplies(s,c);
+ if(bad){
+  const banner=`<div class="prisma-history-warning" role="status"><div><strong>Esta entrevista contiene ${bad} respuesta${bad===1?'':'s'} anterior${bad===1?'':'es'} fuera de rol.</strong><span>La corrección se aplica a mensajes nuevos. Puedes reiniciar solamente esta entrevista; los demás casos y sesiones no se modificarán.</span></div><button type="button" data-action="prisma-reset-chat">Reiniciar diálogo</button></div>`;
+  markup=markup.replace('<div class="sim-shell">',banner+'<div class="sim-shell">');
+ }
+ return markup;
+};
+const prismaRoleCSS=document.createElement('style');prismaRoleCSS.textContent=`
+.prisma-history-warning{background:#fff7ed;border:1px solid #e6b989;border-radius:11px;padding:12px 15px;display:flex;justify-content:space-between;align-items:center;gap:12px;color:#67441b;margin:0 0 12px}
+.prisma-history-warning strong{display:block;font-size:13px}
+.prisma-history-warning span{display:block;color:#795c38;font-size:12px;line-height:1.5;margin-top:3px}
+.prisma-history-warning button{background:white;color:#6c461e;border:1px solid #aa7742;border-radius:8px;font-size:12px;padding:11px 14px;min-height:44px;font-weight:700;cursor:pointer;white-space:nowrap}
+@media(max-width:650px){.prisma-history-warning{align-items:stretch;flex-direction:column}.prisma-history-warning button{white-space:normal}}
+`;document.head.appendChild(prismaRoleCSS);
+
+document.addEventListener('click',e=>{
+ const btn=e.target.closest('[data-action="prisma-reset-chat"]');if(!btn)return;
+ const s=currentSession();if(!s)return;
+ confirmDialog('Reiniciar solo esta entrevista','Se eliminarán los mensajes de esta entrevista activa para comenzar desde cero. Los demás consultantes y sesiones anteriores permanecerán intactos. Puedes exportar un respaldo antes si necesitas conservar este diálogo.','Reiniciar entrevista',()=>{
+  const c=caseById(s.patientId);
+  s.messages=[{id:uid(),role:'patient',text:c.opening,at:new Date().toISOString()}];
+  s.turns=[];
+  s.dimensions=(Array.isArray(s.trajectories?.[0])?s.trajectories[0]:c.baseline).slice();
+  s.trajectories=[s.dimensions.slice()];
+  s.leadInEvent=null;
+  save();render();toast('Entrevista reiniciada. El consultante conserva su rol.');
+ });
+},true);
 </script>
 </body>
 </html>

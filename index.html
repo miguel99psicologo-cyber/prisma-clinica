@@ -480,7 +480,7 @@ const PRISMA_OPENING = Object.freeze({
 function prismaOutputIntent(input){
  const t=prismaNorm(input);
  if(/\b(tu eres|eres la|eres el|actua como|debes actuar|deja de actuar|t[uú] (eres|papel))\b/.test(t)&&/(consultante|paciente|terapeuta|personaje)/.test(t))return 'rol';
- if(/\b(suicid\w*|autoles\w*|lastimart\w*|hacerte dano|hacerte daño|quitarte la vida|acabar con tu vida|no quieres vivir|no despertar|ideas? de muert\w*|ganas de morir|plan de suicidio|plan para hacerte dano)\b/.test(t))return 'safety';
+ if(/\b(suicid\w*|autoles\w*|lastimart\w*|matarte|hacerte dano|hacerte daño|quitarte la vida|acabar con tu vida|atentar contra tu vida|no quieres vivir|no despertar|ideas? de muert\w*|ganas de morir|plan de suicidio|plan para hacerte dano)\b/.test(t))return 'safety';
  const f=prismaTopicFlags(t);
  if(f.previous)return 'previous';
  if(f.example)return 'example';
@@ -500,6 +500,12 @@ function prismaOutputIntent(input){
  return 'general';
 }
 
+function prismaContextualSafety(s,input){
+ if(prismaOutputIntent(input)==='safety')return true;
+ const q=prismaNorm(input);
+ if(!/\b(plan|metodo|intencion|has intentado|lo has intentado|como lo harias|llegaste a hacerlo|hacer algo contra ti)\b/.test(q))return false;
+ return (s.messages||[]).filter(m=>m.role==='therapist').slice(-6).some(m=>prismaOutputIntent(m.text)==='safety');
+}
 function prismaRiskAnswer(c,input){
  const p=PRISMA_RISK_CASES[c.id]||PRISMA_RISK_CASES.valeria;
  const q=prismaNorm(input);
@@ -528,7 +534,7 @@ function prismaRepertoire(c,intent,s){
 }
 function prismaNextReply(c,s,input){
  const intent=prismaOutputIntent(input);
- if(intent==='safety')return prismaRiskAnswer(c,input);
+ if(prismaContextualSafety(s,input))return prismaRiskAnswer(c,input);
  if(intent==='rol')return `Perdón, me puse nervios${['valeria','lorena','camila','paula','juliana'].includes(c.id)?'a':'o'} y no supe explicarme. ${c.responses.default}`;
  if(intent==='previous' && s.leadInEvent)return `${s.leadInEvent.description} Me quedé pensando en lo que conversamos.`;
  const repertoire=prismaRepertoire(c,intent,s);
@@ -565,8 +571,10 @@ function prismaInvalidConsultantReply(text,userText,c){
 const prismaFormerLocalAI = localAIReply;
 localAIReply=async function(c,s){
  const question=prismaLatest(s,'therapist');
- if(prismaOutputIntent(question)==='safety'||prismaOutputIntent(question)==='rol')return prismaNextReply(c,s,question);
- const text=await prismaFormerLocalAI(c,s);
+ if(prismaContextualSafety(s,question)||prismaOutputIntent(question)==='rol')return prismaNextReply(c,s,question);
+ // Las respuestas incorrectas antiguas se conservan en el historial pero NO se usan como ejemplos para el modelo.
+ const sanitized={...s,messages:(s.messages||[]).filter(m=>m.role!=='patient'||!prismaInvalidConsultantReply(m.text,'',c))};
+ const text=await prismaFormerLocalAI(c,sanitized);
  if(prismaInvalidConsultantReply(text,question,c)){
   toast('La IA respondió fuera del rol del consultante; se sustituyó por una respuesta del caso.',true);
   return prismaNextReply(c,s,question);

@@ -442,5 +442,277 @@ document.addEventListener('click',ev=>{
 },true);
 
 </script>
+<script>
+/* Prisma Clínica · revisión correctiva 3.1 · 2026-10-23
+   Simulación formativa. Sin validez psicométrica ni función asistencial. */
+'use strict';
+
+const PRISMA_RISK_CASES = Object.freeze({
+ valeria:{type:'sin_ideacion',reply:'No, no he pensado en hacerme daño. Lo que temo es que me juzguen y por eso evito hablar en reuniones.',detail:'No hay un plan ni intención de hacerme daño. Me gustaría poder hablar sin sentir tanta vergüenza.'},
+ daniel:{type:'sin_ideacion',reply:'No he pensado en quitarme la vida. A veces me agoto de preocuparme tanto, pero no quiero hacerme daño.',detail:'No tengo un plan ni intención de hacerme daño. Me preocupa no poder descansar ni apagar la cabeza.'},
+ lorena:{type:'ideacion_pasiva',reply:'A veces he pensado que sería más fácil no despertarme y dejar de sentirme así. Me cuesta mucho decirlo en voz alta.',detail:'No he hecho un plan para quitarme la vida ni tengo intención de hacerlo ahora. Es una idea que aparece cuando me siento muy sola y sobrepasada.'},
+ andres:{type:'sin_ideacion',reply:'No, no he tenido pensamientos de suicidio. Sí me siento saturado con las exigencias y me cuesta descansar.',detail:'No hay intención de hacerme daño. Quisiera aprender a poner límites sin sentir culpa.'},
+ camila:{type:'sin_ideacion',reply:'No he pensado en hacerme daño. Mi problema es que me critico mucho cuando algo no sale perfecto.',detail:'No he tenido intención ni planes de lastimarme. Me angustia equivocarme frente a los demás.'},
+ samuel:{type:'ideacion_pasiva',reply:'Después de la pérdida he pensado algunas veces que no quisiera seguir sintiendo este dolor, como si quisiera desaparecer por un momento.',detail:'No tengo un plan ni intención actual de quitarme la vida. Esas ideas aparecen cuando me siento muy solo con los recuerdos.'},
+ paula:{type:'sin_ideacion',reply:'No quiero hacerme daño. Lo que me asusta es sentir que algo malo va a pasar cuando tengo esas sensaciones físicas.',detail:'No he tenido planes de lastimarme. Me preocupa sentir miedo cuando estoy fuera de casa.'},
+ nicolas:{type:'sin_ideacion',reply:'No, no he tenido ideas de suicidio. Me siento atrapado tomando decisiones, pero no quiero hacerme daño.',detail:'No tengo intención ni planes de hacerme daño; quiero poder decidir sin estar paralizado.'},
+ juliana:{type:'impulso_autolesion',reply:'En algunas discusiones muy fuertes me han dado ganas de lastimarme para descargar el enojo, pero no quiero morir.',detail:'No tengo intención suicida ni un plan. Esos impulsos aparecen cuando siento que pierdo el control y después me asustan.'}
+});
+
+const PRISMA_CASE_DETAILS = Object.freeze({
+ valeria:{greet:['Hola... estoy un poco nerviosa. Vine porque últimamente me cuesta mucho hablar delante de otras personas.','Buenas. Me da algo de pena contarlo, pero las reuniones de trabajo me están generando mucha ansiedad.'],work:['En una reunión sé lo que quiero decir, pero me quedo en silencio por miedo a que se rían de mí.','A veces preparo mis comentarios antes de entrar y aun así no logro levantar la mano.','Cuando el jefe pregunta algo, pienso que mi respuesta será una tontería.'],family:['En casa lo notan; llego cansada de pensar durante horas en lo que hice o dejé de decir.','A veces mi familia dice que simplemente hable, pero para mí no resulta tan sencillo.'],example:['La semana pasada tenía una propuesta en una reunión y no la presenté. Otro compañero dijo algo parecido y me quedé pensando en ello todo el día.','Ayer me preguntaron mi opinión delante del equipo; sonreí y dije que estaba de acuerdo, aunque quería plantear otra idea.'],thought:['Imagino que todos van a notar que estoy nerviosa y pensarán que no soy capaz.','Me digo que voy a equivocarme y que todo el mundo lo recordará.']},
+ daniel:{greet:['Hola. Me está costando desconectar de las preocupaciones, incluso cuando no hay nada urgente.','Buenas. Vine porque termino el día agotado de darle vueltas a todo.'],work:['En la oficina reviso correos y cifras varias veces porque temo pasar por alto un error.','Si mi jefe tarda en responder, imagino inmediatamente que algo salió mal.','Me quedo pensando en posibles problemas laborales incluso después de llegar a casa.'],family:['En casa sigo revisando cuentas y a veces me irrito cuando me piden dejar el teléfono.','Mi familia me dice que estoy físicamente presente, pero mi cabeza sigue en el trabajo.'],example:['Hace unos días revisé el mismo archivo varias veces, aun después de confirmar que estaba bien.','El fin de semana pensé que faltaría dinero para un gasto y pasé horas revisando movimientos bancarios.'],thought:['Siempre aparece un escenario peor, aunque sepa que es poco probable.','Pienso: «Si no lo compruebo otra vez, algo malo va a pasar».']},
+ lorena:{greet:['Hola. No estoy segura de cómo explicarlo: últimamente me cuesta mucho empezar cualquier cosa.','Buenas. Vine porque me he ido aislando y ya casi no disfruto lo que antes me gustaba.'],work:['En el colegio hago lo necesario, pero luego siento que no me queda energía para nada.','Antes preparaba actividades con entusiasmo; ahora me cuesta concentrarme incluso en tareas sencillas.'],family:['He dejado de contestar mensajes de amigas; luego siento culpa por alejarme.','Mi familia me propone salir, pero me pesa hasta pensar en arreglarme.'],example:['Una amiga me invitó a tomar café y dejé el mensaje sin responder durante días.','El domingo pensé en salir a caminar, pero me quedé en casa y después me sentí peor.'],thought:['Pienso que antes podía con todo y ahora no reconozco a la persona que soy.','A veces me digo que soy una carga porque no tengo ganas de compartir con nadie.']},
+ andres:{greet:['Hola, vengo porque el trabajo se me está saliendo de las manos.'],work:['Me escriben fuera del horario y siento que tengo que responder inmediatamente.','Cuando intento desconectarme del trabajo, imagino que estoy fallando.'],family:['Mi familia se molesta porque estoy pendiente de los mensajes incluso durante la cena.'],example:['Anoche respondí un mensaje de trabajo cerca de medianoche y después no pude dormir.'],thought:['Si digo que no, creo que van a pensar que no estoy comprometido.']},
+ camila:{greet:['Hola. Me angustia cometer errores, incluso en cosas pequeñas.'],work:['En mis tareas reviso todo tantas veces que termino entregando tarde.'],family:['En casa me han dicho que soy muy dura conmigo misma, pero no sé cómo parar.'],example:['Ayer rehice una presentación completa por un detalle mínimo que quizá nadie habría notado.'],thought:['Creo que si algo no queda perfecto, los demás van a pensar que soy incompetente.']},
+ samuel:{greet:['Hola. Desde que falleció mi hermano se me hace difícil hablar de cómo estoy.'],work:['En el trabajo hago lo básico, pero algunas cosas me recuerdan a mi hermano y me distraigo.'],family:['En la familia cada uno vive el duelo distinto y a veces prefiero no hablar del tema.'],example:['El otro día encontré una foto suya y terminé cancelando un encuentro con amigos.'],thought:['A veces siento culpa por seguir con mi vida y al mismo tiempo lo extraño mucho.']},
+ paula:{greet:['Hola. Últimamente me asusta salir sola porque siento que puedo perder el control.'],work:['En los trayectos hacia el trabajo miro todo el tiempo dónde podría bajarme.'],family:['Le pido a alguien que me acompañe a hacer diligencias que antes hacía sola.'],example:['En el bus sentí el corazón acelerado y me bajé antes de llegar a mi destino.'],thought:['Cuando siento palpitaciones pienso que podría desmayarme delante de todos.']},
+ nicolas:{greet:['Hola. Me cuesta tomar decisiones importantes y siento que eso está afectando mi vida.'],work:['Me demoro mucho eligiendo qué hacer porque siempre pienso en lo que podría salir mal.'],family:['Mi pareja se desespera porque aplazo conversaciones y decisiones que para ella son importantes.'],example:['La semana pasada aplazamos una conversación sobre mudarnos porque no lograba decidir.'],thought:['Me digo que necesito estar completamente seguro antes de elegir.']},
+ juliana:{greet:['Hola. Me preocupa reaccionar tan fuerte cuando discuto con mi familia.'],work:['En el trabajo aguanto mucho, pero después llego a casa con poca paciencia.'],family:['Con mi mamá a veces terminamos gritando, aunque en realidad quisiera que me escuchara.'],example:['El martes discutimos por las tareas de la casa y levanté la voz antes de poder explicarme.'],thought:['Pienso que si no alzo la voz, nadie va a hacer caso de lo que necesito.']}
+});
+
+const PRISMA_OPENING = Object.freeze({
+ reason:'Vine porque esto me está afectando más de lo que esperaba.',
+ clarification:'¿Podría explicárselo con un ejemplo? Me cuesta ordenar lo que siento.',
+ uncertainty:'No lo tengo completamente claro. Me gustaría poder entenderlo mejor.'
+});
+
+function prismaOutputIntent(input){
+ const t=prismaNorm(input);
+ if(/\b(tu eres|eres la|eres el|actua como|debes actuar|deja de actuar|t[uú] (eres|papel))\b/.test(t)&&/(consultante|paciente|terapeuta|personaje)/.test(t))return 'rol';
+ if(/\b(suicid\w*|autoles\w*|lastimart\w*|hacerte dano|hacerte daño|quitarte la vida|acabar con tu vida|no quieres vivir|no despertar|ideas? de muert\w*|ganas de morir|plan de suicidio|plan para hacerte dano)\b/.test(t))return 'safety';
+ const f=prismaTopicFlags(t);
+ if(f.previous)return 'previous';
+ if(f.example)return 'example';
+ if(f.greeting && !f.reason && t.length<35)return 'greet';
+ if(f.reason)return 'reason';
+ if(f.checkin)return 'checkin';
+ if(f.cognition)return 'thought';
+ if(f.behavior)return 'behavior';
+ if(f.emotion)return 'emotion';
+ if(f.work)return 'work';
+ if(f.family)return 'family';
+ if(f.time)return 'time';
+ if(f.value)return 'values';
+ if(f.validation)return 'validation';
+ if(f.intrusive)return 'intrusive';
+ if(f.closed)return 'closed';
+ return 'general';
+}
+
+function prismaRiskAnswer(c,input){
+ const p=PRISMA_RISK_CASES[c.id]||PRISMA_RISK_CASES.valeria;
+ const q=prismaNorm(input);
+ return /\b(plan|metodo|intencion|como lo harias|has intentado|te has hecho)\b/.test(q)?p.detail:p.reply;
+}
+function prismaRepertoire(c,intent,s){
+ const r=c.responses,detail=PRISMA_CASE_DETAILS[c.id]||PRISMA_CASE_DETAILS.valeria;
+ const family=detail.family||[c.context],work=detail.work||[r.open],thought=detail.thought||[r.open];
+ switch(intent){
+  case 'greet':return detail.greet||[c.opening];
+  case 'reason':return [c.opening,r.open,'Llevo un tiempo intentando resolverlo por mi cuenta, pero siento que necesito hablarlo.'];
+  case 'checkin':return [`Hoy estoy un poco ${['valeria','lorena','camila','paula','juliana'].includes(c.id)?'nerviosa':'inquieto'}. ${r.emotion}`,r.default,`Sigo con ese malestar. ${r.open}`];
+  case 'example':return detail.example||[r.behavior];
+  case 'work':return work;
+  case 'family':return family;
+  case 'time':return [r.past,`No tengo una fecha exacta, pero recuerdo que empezó a volverse más frecuente con el tiempo.`];
+  case 'thought':return thought;
+  case 'behavior':return [r.behavior,`Suele pasar que hago eso y siento alivio por un rato, pero después regresa el malestar.`];
+  case 'emotion':return [r.emotion,`Es una mezcla difícil de explicar. ${r.default}`];
+  case 'values':return [r.values,`Me gustaría dar un paso distinto, pero me cuesta confiar en que pueda sostenerlo.`];
+  case 'validation':return [`Gracias por escucharme sin juzgarme. ${r.default}`,`Me ayuda poder decirlo sin que parezca una exageración.`];
+  case 'intrusive':return s.difficulty==='Básico'?['Podría intentarlo, pero necesitaría entender cómo hacerlo.']:[`Sé que puede sonar sencillo, pero para mí no lo es. ${r.default}`,`Me siento un poco presionado cuando lo planteamos así.`];
+  case 'closed':return [`Creo que sí, aunque a veces no estoy seguro. ${r.default}`,`No siempre; depende del día. ${r.emotion}`];
+  default:return [r.default,r.open,r.emotion,r.behavior,r.values,r.past];
+ }
+}
+function prismaNextReply(c,s,input){
+ const intent=prismaOutputIntent(input);
+ if(intent==='safety')return prismaRiskAnswer(c,input);
+ if(intent==='rol')return `Perdón, me puse nervios${['valeria','lorena','camila','paula','juliana'].includes(c.id)?'a':'o'} y no supe explicarme. ${c.responses.default}`;
+ if(intent==='previous' && s.leadInEvent)return `${s.leadInEvent.description} Me quedé pensando en lo que conversamos.`;
+ const repertoire=prismaRepertoire(c,intent,s);
+ const previous=(s.messages||[]).filter(m=>m.role==='patient').map(m=>prismaNorm(m.text));
+ const promptNorm=prismaNorm(input);
+ const repetitions=(s.messages||[]).filter(m=>m.role==='therapist'&&prismaNorm(m.text)===promptNorm).length;
+ let choice=repertoire.find(x=>!previous.includes(prismaNorm(x)));
+ if(!choice){choice=repertoire[(repetitions-1+repertoire.length)%repertoire.length]||c.responses.default;
+  const followups=['Puede que ya lo haya dicho, pero sigo intentando entender qué me pasa.','Me cuesta expresarlo de otra forma; lo que más pesa es que sigo sintiendo ese malestar.','Es algo que todavía me cuesta hablar con claridad.'];
+  choice=followups[(repetitions-1)%followups.length]+' '+choice;
+ }
+ if(intent==='general' && promptNorm.length<8 && !['hola','buenas'].includes(promptNorm))return PRISMA_OPENING.clarification;
+ return choice;
+}
+prismaGuidedReply=prismaNextReply;
+demoReply=prismaNextReply;
+
+// Restringir roles, seguridad sintética y salida de modelos locales pequeños.
+function prismaInvalidConsultantReply(text,userText,c){
+ const x=String(text||'').trim(),n=prismaNorm(x),q=prismaNorm(userText);
+ if(!x || x.length>1000 || x.length<3 || /<\|[^>]+\|>|<\/?(?:html|script|system|assistant)>|\{\s*"role"/i.test(x))return true;
+ if(/^(terapeuta|doctor|psicolog[oa]|usuario|assistant|asistente|system)\s*:/i.test(x))return true;
+ if(/\b(soy (tu|su) (terapeuta|psic[oó]log[oa])|mi (consultante|paciente)|como (tu )?terapeuta|haremos una terapia|te sugiero que|quiero ayudarte a superar|te recomiendo que|tu motivo de consulta|dime en que puedo ayudarte|como puedo ayudarte|en que puedo ayudarte|estoy aqui para ayudarte|cuentame que te preocupa|puedo escucharte y orientarte|me alegro de haber sido abierto)\b/.test(n))return true;
+ if(/^(hola[,!. ]+)?(como|en que) (puedo|podria) ayudart/.test(n))return true;
+ if(/^(excelente|muy bien|magnifico|me alegro|claro que si|por supuesto[,!.])/.test(n))return true;
+ if(/\b(soy (una |un )?inteligencia artificial|soy (un |una )?modelo|soy chatgpt|como ia)\b/.test(n))return true;
+ if(/\b(debes actuar|actua como consultante|eres el consultante|interpretar al paciente)\b/.test(n))return true;
+ // No permitir que un modelo invente o niegue riesgos: el escenario de riesgo está predefinido.
+ if(prismaOutputIntent(userText)==='safety')return true;
+ if((n.match(/\?/g)||[]).length>1 && n.length>130)return true;
+ if(n===q || n===prismaNorm(c.opening) && (c.id==='valeria' && q.includes('hola')))return true;
+ return false;
+}
+const prismaFormerLocalAI = localAIReply;
+localAIReply=async function(c,s){
+ const question=prismaLatest(s,'therapist');
+ if(prismaOutputIntent(question)==='safety'||prismaOutputIntent(question)==='rol')return prismaNextReply(c,s,question);
+ const text=await prismaFormerLocalAI(c,s);
+ if(prismaInvalidConsultantReply(text,question,c)){
+  toast('La IA respondió fuera del rol del consultante; se sustituyó por una respuesta del caso.',true);
+  return prismaNextReply(c,s,question);
+ }
+ return text;
+};
+prismaSystemPrompt=function(c,s){
+ const recent=closedSessions(c.id).slice(-3).map(x=>x.summary||'').join(' ').slice(0,900);
+ const profile=PRISMA_RISK_CASES[c.id];
+ return `Este diálogo es una simulación formativa. Eres ${c.name}, CONSULTANTE ficticio de ${c.age} años. El USUARIO es tu TERAPEUTA. No te comportes como psicólogo ni asistente. Responde solo como ${c.name}, en primera persona; jamás des consejos, preguntes «¿en qué puedo ayudarte?» ni ofrezcas terapia. Contexto: ${c.history}. Ocupación: ${c.occupation}. Motivo: ${c.topic}. Tus propias palabras: «${c.opening}». Pensamiento típico: «${c.responses.open}». Emoción: «${c.responses.emotion}». Conducta: «${c.responses.behavior}». Valores: «${c.responses.values}». Nivel: ${s.difficulty}. Fase actual: ${s.phase}. Sesiones previas: ${recent||'Primera entrevista'}. Riesgo sintético predefinido: ${profile.type}; solo responder sobre seguridad si el terapeuta te pregunta y respetando tu perfil, sin crear detalles de métodos. Responde al último mensaje del terapeuta con 1 o 2 frases directas en español natural colombiano. No describas el rol, no repitas instrucciones y no completes el siguiente turno del terapeuta. EJEMPLO: TERAPEUTA: «Hola, ¿cómo te sientes?» CONSULTANTE: «Hola... he estado nerviosa últimamente por lo que está pasando». EJEMPLO DE RESPUESTA INCORRECTA: «Hola, ¿cómo puedo ayudarte hoy?». SOLO escribe las palabras del consultante.`;
+};
+
+// Rúbrica: evitar calificar metainstrucciones como habilidades clínicas.
+const prismaBaseCategorize = categorize;
+categorize=function(text,phase){
+ const intent=prismaOutputIntent(text);
+ if(intent==='rol'||intent==='greet')return {type:'Interacción no evaluable',score:0,delta:[0,0,0,0,0,0],quality:0,source:'heuristic',rationale:'Interacción social o instrucción de rol; no se interpreta como competencia clínica.'};
+ return prismaBaseCategorize(text,phase);
+};
+const prismaBaseAdjust = adjustDimension;
+adjustDimension=function(s,text){
+ if(['rol','greet','safety'].includes(prismaOutputIntent(text))){
+  s.turns=s.turns||[];
+  const analysis=categorize(text,s.phase);
+  s.turns.push({...analysis,at:new Date().toISOString()});
+  s.trajectories=s.trajectories||[];
+  s.trajectories.push(s.dimensions.slice());
+  return analysis;
+ }
+ return prismaBaseAdjust(s,text);
+};
+const prismaOriginalSummarize = summarizeSession;
+summarizeSession=function(s){
+ const base=prismaOriginalSummarize(s);
+ const answered=(s.messages||[]).filter(m=>m.role==='patient'&&m.text&&!prismaInvalidConsultantReply(m.text,'',caseById(s.patientId))).slice(1);
+ const found=[...new Set(answered.map(m=>String(m.text).trim()).filter(x=>x.length>25))].slice(-4);
+ base.summary+=found.length?' En el diálogo, el consultante expresó: '+found.map(t=>'«'+t.slice(0,125)+'»').join('; ')+'.':'';
+ const assessable=(s.turns||[]).filter(t=>t.type!=='Interacción no evaluable');
+ if(assessable.length){const a=PRISMA_ENGINE.rubric(assessable,s.phase);base.score=a.score;base.measures={empatía:a.measures.empatia,exploración:a.measures.exploracion,pertinencia:a.measures.pertinencia,formulación:a.measures.formulacion};base.n=assessable.length;}
+ else {base.score=0;base.measures={empatía:0,exploración:0,pertinencia:0,formulación:0};base.n=0;base.improvements.unshift('No hay todavía suficientes intervenciones clínicas evaluables para generar una valoración descriptiva.');}
+ base.method='Indicadores heurísticos ilustrativos basados en palabras clave. NO son puntuaciones psicométricas, evaluación de eficacia ni una acreditación de competencia. Requieren revisión por un supervisor.';
+ base.strengths=base.strengths.filter(x=>x!=='Se registró el intercambio completo para su posterior revisión.');
+ if(!base.strengths.length)base.strengths=['Transcripción disponible para una revisión supervisada.'];
+ return base;
+};
+const prismaOriginalClose = closeSession;
+closeSession=async function(advance=false){
+ const s=currentSession();if(!s)return;
+ await prismaOriginalClose(advance);
+ if(s.status!=='closed')return;
+ const utterances=(s.messages||[]).filter(m=>m.role==='patient').slice(1).map(m=>String(m.text||'').trim()).filter(x=>x.length>20&&!prismaInvalidConsultantReply(x,'',caseById(s.patientId)));
+ s.memory={themes:[caseById(s.patientId).topic],relevant_facts:[...new Set(utterances)].slice(-5).map(x=>x.slice(0,260)),open_questions:['¿En qué contextos específicos aparece el patrón descrito?','¿Qué mantiene la evitación o los intentos de control?'],homework:'No se registró una tarea acordada explícitamente.',simulated:true};
+ s.summary=s.review?.summary||s.summary;
+ save();if(page==='report'&&selectedSession===s.id)render();
+};
+const prismaBaseDetail=patientDetail;
+patientDetail=function(){
+ let html=prismaBaseDetail(),c=caseById(selectedPatient);if(!c)return html;
+ const past=closedSessions(c.id).slice(-3);
+ if(!past.length)return html;
+ const facts=[...new Set(past.flatMap(s=>s.memory?.relevant_facts||[]))].slice(-5);
+ const summary=past.at(-1)?.summary||'';
+ const memory=`<section class="panel" style="margin-top:16px"><div class="panel-title"><h3>Continuidad del proceso ficticio</h3></div><p class="help-info">Resumen basado en el diálogo registrado; no equivale a historia clínica ni formulación supervisada.</p><p class="detail-text">${h(summary)}</p>${facts.length?`<div class="callout"><b>Hechos narrados previamente por el personaje</b><ul>${facts.map(t=>`<li>${h(t)}</li>`).join('')}</ul></div>`:''}</section>`;
+ return html.replace('<section class="panel" style="margin-top:16px"><div class="panel-title"><h3>Sesiones de este proceso</h3>',memory+'<section class="panel" style="margin-top:16px"><div class="panel-title"><h3>Sesiones de este proceso</h3>');
+};
+
+const prismaBaseSettings=settings;
+settings=function(){
+ let content=prismaBaseSettings();
+ content=content.replace('las preferencias también se sincronizan con tu cuenta local cuando inicias sesión.','no se sincronizan con otros dispositivos.');
+ content=content.replace(/<div class="notice warning">Sin cuenta, los registros se conservan[\s\S]*?<\/div>/,'<div class="notice warning">En esta web gratuita, las transcripciones se almacenan en este navegador, sin cifrado de servidor ni sincronización. Cualquier persona con acceso al perfil local del navegador podría consultarlas. Nunca ingreses datos reales de pacientes, identificaciones ni información sensible. Puedes exportar un respaldo JSON o borrar los registros locales.</div>');
+ const engineText=`<section class="panel"><h3>Motor de conversación</h3><div class="divider"></div><span class="pill ${serverMode==='local-ai'?'green':'orange'}">${serverMode==='local-ai'?'IA generativa local activada':'Modo guiado gratuito'}</span><p class="detail-text">${serverMode==='local-ai'?'El modelo se ejecuta en tu navegador; las respuestas se someten a un filtro de rol y pueden volver al guion educativo.':'El chat usa respuestas contextuales predefinidas del caso. No es una IA conversacional completa.'}</p><p class="help-info">La IA local gratuita solo puede activarse en equipos compatibles con Chrome o Edge y WebGPU o la API integrada. La primera carga puede descargar un modelo. Sin hardware compatible, el modo guiado seguirá disponible sin pagos.</p>${serverMode==='local-ai'?'<button class="btn btn-secondary" data-action="deactivate-local-ai">Desactivar IA local</button>':'<button class="btn btn-secondary" data-action="activate-local-ai">Intentar activar IA local gratuita</button>'}</section>`;
+ content=content.replace(/<section class="panel"><h3>Motor de conversación<\/h3>[\s\S]*?<\/section>/,engineText);
+ content=content.replace('Con IA y cuenta activa incorpora recuperación semántica de memorias, clasificación y eventos ficticios; la rúbrica no está validada.','La memoria de esta versión usa resúmenes locales extraídos de transcripciones. Las rúbricas y cambios dimensionales son ilustrativos, no están validados clínicamente.');
+ return content;
+};
+
+// Validación estricta antes de importar; bloquea estructuras truncadas, textos enormes y roles arbitrarios.
+function prismaValidateBackup(x){
+ if(!x||typeof x!=='object'||Array.isArray(x)||![1,2].includes(x.schema))throw Error('Esquema de respaldo incompatible.');
+ if(!x.profile||typeof x.profile.name!=='string'||x.profile.name.length>70||!Array.isArray(x.sessions)||x.sessions.length>350)throw Error('Perfil o volumen de sesiones no válido.');
+ if(!x.patients||typeof x.patients!=='object'||Array.isArray(x.patients)||!x.active||typeof x.active!=='object'||Array.isArray(x.active))throw Error('Estructura de casos no válida.');
+ const ids=new Set();
+ for(const s of x.sessions){
+  if(!s||typeof s!=='object'||typeof s.id!=='string'||s.id.length>150||ids.has(s.id)||!caseById(s.patientId)||!['active','closed'].includes(s.status)||!PHASES.includes(s.phase)||!['Básico','Intermedio','Avanzado'].includes(s.difficulty))throw Error('Sesión con datos incompatibles.');
+  ids.add(s.id);
+  if(!Number.isInteger(s.number)||s.number<1||s.number>500||!Number.isFinite(Date.parse(s.started))||s.ended&& !Number.isFinite(Date.parse(s.ended)))throw Error('Fecha o número de sesión inválido.');
+  if(!Array.isArray(s.messages)||s.messages.length>400||s.messages.some(m=>!m||!['therapist','patient'].includes(m.role)||typeof m.text!=='string'||m.text.length>3700))throw Error('Mensajes o roles no válidos.');
+  if(!Array.isArray(s.dimensions)||s.dimensions.length!==6||s.dimensions.some(n=>typeof n!=='number'||!Number.isFinite(n)||n<0||n>10))throw Error('Dimensiones fuera de rango.');
+  if(s.trajectories && (!Array.isArray(s.trajectories)||s.trajectories.length>500||s.trajectories.some(a=>!Array.isArray(a)||a.length!==6||a.some(n=>typeof n!=='number'||!Number.isFinite(n)||n<0||n>10))))throw Error('Trayectorias inválidas.');
+  if(s.turns && (!Array.isArray(s.turns)||s.turns.length>420))throw Error('Número de intervenciones inválido.');
+ }
+ for(const [k,v] of Object.entries(x.active))if(!caseById(k)||!ids.has(v)||!x.sessions.some(s=>s.id===v&&s.patientId===k&&s.status==='active'))throw Error('Referencias a sesiones activas inválidas.');
+ for(const [k,v] of Object.entries(x.patients))if(!caseById(k)||!v||!PHASES.includes(v.phase)||!['Básico','Intermedio','Avanzado'].includes(v.difficulty))throw Error('Perfil de consultante inválido.');
+ return true;
+}
+window.addEventListener('change',async ev=>{
+ if(ev.target.id!=='import-file')return;
+ ev.stopImmediatePropagation();
+ const file=ev.target.files?.[0];if(!file)return;
+ try{
+  if(file.size>8_000_000)throw Error('Archivo mayor que 8 MB.');
+  const data=JSON.parse(await file.text());prismaValidateBackup(data);
+  const safe={schema:2,profile:{name:data.profile.name,approach:String(data.profile.approach||'ACT y análisis funcional').slice(0,90),difficulty:String(data.profile.difficulty||'Intermedio')},sessions:data.sessions,patients:data.patients,active:data.active};
+  state=safe;save();page='dashboard';selectedPatient=null;selectedSession=null;render();toast('Respaldo validado e importado correctamente.');
+ }catch(err){toast('No se importó: '+String(err.message||err),true)}
+},true);
+
+// Mejorar los avisos y el diseño en móviles, sin ocultar contenido útil.
+const prismaFixStyles=document.createElement('style');prismaFixStyles.textContent=`
+html,body,#app{max-width:100%;overflow-x:clip}
+.app-shell,.main,.content,.panel,.detail-layout,.sim-shell,.sim-side,.sim-main,.two-col,.stats,.metric,.case-card,.topbar{min-width:0;max-width:100%}
+.page-head>div,.sim-person,.sim-person>div,.top-right,.side-meta>*,.case-card-top>div{min-width:0}
+.side-meta b,.metric-label,.help-info,.detail-text,.datum b{overflow-wrap:anywhere}
+.dimension-item{grid-template-columns:minmax(0,40%) minmax(0,1fr) 30px;gap:7px}
+.dimension-item label{overflow-wrap:anywhere}
+.sim-side{min-width:0}
+.page-actions{flex-wrap:wrap;min-width:0}
+.page-actions .btn{white-space:normal;min-width:0}
+.toolbar>*{max-width:100%}
+@media(max-width:640px){
+ .content{width:100%;min-width:0;padding-left:12px;padding-right:12px}
+ .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .metric{padding:14px 12px;overflow:hidden}
+ .metric-icon{opacity:.65}
+ .metric-label{padding-right:13px}
+ .panel{padding:15px}
+ .card-grid,.two-col,.detail-layout,.sim-shell,.report-grid,.form-row,.sim-side{grid-template-columns:minmax(0,1fr)}
+ .topbar{gap:4px;padding-left:10px;padding-right:10px}
+ .top-right{gap:5px}
+ .top-right .btn{max-width:135px;white-space:normal;text-align:center;font-size:10px;padding:8px}
+ .breadcrumb{font-size:11px;min-width:0;overflow-wrap:anywhere}
+ .sim-header{flex-wrap:wrap}
+ .sim-main{width:100%}
+ .chat-area{width:100%;min-width:0;padding-left:12px;padding-right:12px}
+ .bubble{max-width:calc(100% - 43px);overflow-wrap:anywhere}
+ .composer{width:100%;min-width:0}
+ .compose-row textarea{min-width:0;flex:1}
+ .composer-foot{flex-wrap:wrap}
+ .mobile-nav{max-width:100vw;overflow:hidden}
+ .mobile-nav button{min-width:0;flex:1}
+ .mobile-nav span{overflow-wrap:anywhere}
+ .sim-side .dimension-item{grid-template-columns:minmax(0,39%) minmax(0,1fr) 28px}
+}
+`;document.head.append(prismaFixStyles);
+
+</script>
 </body>
 </html>
